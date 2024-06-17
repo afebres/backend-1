@@ -5,6 +5,8 @@ import {
   getProducts,
   getProductById,
   addProduct,
+  updateProduct,
+  deleteProduct
 } from '../controlers/product.js'
 
 router.get('/', async (req, res) => {
@@ -38,7 +40,30 @@ router.post('/', async (req, res) => {
   }
 })
 
-router.delete('/', async (req, res) => {})
 
-router.put('/', async (req, res) => {})
+router.put('/:pid', async (req, res) => {
+  try {
+    const updatedProduct = await updateProduct(req.params.pid, req.body)
+    if (updatedProduct) {
+      res.json(updatedProduct)
+    } else {
+      res.status(404).send('Producto no encontrado')
+    }
+  } catch (error) {
+    res.status(500).send('Error')
+  }
+})
+
+router.delete('/:pid', async (req, res) => {
+  try {
+    const deletedProduct = await deleteProduct(req.params.pid)
+    if (deletedProduct) {
+      res.json(deletedProduct)
+    } else {
+      res.status(404).send('Producto no encontrado')
+    }
+  } catch (error) {
+    res.status(500).send('Error')
+  }
+})
 export default router

@@ -1,9 +1,20 @@
 import express from 'express'
-import { productsData } from '../models/product.js'
+import fs from 'fs/promises'
+import path from 'path'
 
+const dataPath = path.resolve('models', 'products.json')
+
+const readProductsData = async () => {
+  const data = await fs.readFile(dataPath, 'utf8')
+  return JSON.parse(data)
+}
+
+const writeProductsData = async (data) => {
+  await fs.writeFile(dataPath, JSON.stringify(data, null, 2))
+}
 const getProducts = async () => {
   try {
-    const products = productsData
+    const products = await readProductsData()
     if (products) {
       return products
     } else {
@@ -17,8 +28,9 @@ const getProducts = async () => {
 
 const getProductById = async (id) => {
   try {
+    const products = await readProductsData()
     const productId = Number(id)
-    const product = productsData.find((item) => item.id === productId)
+    const product = products.find((item) => item.id === productId)
     if (product) {
       return product
     } else {
@@ -33,7 +45,8 @@ const getProductById = async (id) => {
 
 const addProduct = async (product) => {
   try {
-    const maxId = productsData.reduce(
+    const products = await readProductsData()
+    const maxId = products.reduce(
       (max, item) => (item.id > max ? item.id : max),
       0
     )
@@ -51,7 +64,8 @@ const addProduct = async (product) => {
       thumbnails: product.thumbnails || [],
     }
 
-    productsData.push(newProduct)
+    products.push(newProduct)
+    await writeProductsData(products)
     console.log('Product agregado:', newProduct)
     return newProduct
   } catch (error) {
@@ -62,14 +76,16 @@ const addProduct = async (product) => {
 
 const updateProduct = async (id, updatedProduct) => {
   try {
+    const products = await readProductsData()
     const productId = Number(id)
-    const productIndex = productsData.findIndex((item) => item.id === productId)
+    const productIndex = products.findIndex((item) => item.id === productId)
     console.log('productIndex', productIndex)
     if (productIndex !== -1) {
-      const product = productsData[productIndex]
-      productsData[productIndex] = { ...product, ...updatedProduct }
-      console.log('Producto actualizado:', productsData[productIndex])
-      return productsData[productIndex]
+      const product = products[productIndex]
+      products[productIndex] = { ...product, ...updatedProduct }
+      console.log('Producto actualizado:', products[productIndex])
+      await writeProductsData(products)
+      return products[productIndex]
     } else {
       console.log(`Producto no encontrado`)
       return null
@@ -82,11 +98,13 @@ const updateProduct = async (id, updatedProduct) => {
 
 const deleteProduct = async (id) => {
   try {
+    const products = await readProductsData()
     const productId = Number(id)
-    const productIndex = productsData.findIndex((item) => item.id === productId)
+    const productIndex = products.findIndex((item) => item.id === productId)
 
     if (productIndex !== -1) {
-      const deletedProduct = productsData.splice(productIndex, 1)[0]
+      const [deletedProduct] = products.splice(productIndex, 1)
+      await writeProductsData(products)
       console.log('Producto eliminado', deletedProduct)
       return deletedProduct
     } else {
